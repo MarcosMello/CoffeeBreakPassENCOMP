@@ -41,6 +41,11 @@ dependencies {
     implementation("jakarta.validation:jakarta.validation-api")
 
     implementation ("com.google.code.gson:gson")
+
+    testImplementation("org.springframework.security:spring-security-test")
+    implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    //implementation("org.springframework.session:spring-session-core")
 }
 
 tasks.withType<KotlinCompile> {

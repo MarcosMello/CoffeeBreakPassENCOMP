@@ -8,13 +8,9 @@ import com.ufes.encomp.coffeebreakpass.repository.UserRepository
 import org.springframework.stereotype.Service
 
 @Service
-class UserService (private val userRepository: UserRepository){ //TODO:Password Validation
-    fun getUniqueConstraintFields(username : String, email : String) : Pair<List<User>, List<User>>{
-        return Pair(
-            userRepository.findByUsername(username),
-            userRepository.findByEmail(email)
-        )
-    }
+class UserService (private val userRepository: UserRepository){ //TODO: Logs and Password Validation
+    fun getUniqueConstraintFields(email : String) : List<User> = userRepository
+        .findByEmail(email)
 
     fun getAllUsers() : List<User> = userRepository.findAll()
 
@@ -22,13 +18,12 @@ class UserService (private val userRepository: UserRepository){ //TODO:Password 
             .orElseThrow{ CustomEntityNotFoundException("User") }
 
     fun create(user : User) : User {
-        val isUnique : (Pair<List<User>, List<User>>) -> Boolean = {
-            users : Pair<List<User>, List<User>> ->
-                users.first.isEmpty() && users.second.isEmpty()
+        val isUnique : (List<User>) -> Boolean = {
+            users : List<User> -> users.isEmpty()
         }
 
-        val uniqueConstraints : Pair<List<User>, List<User>> =
-            getUniqueConstraintFields(user.username, user.email)
+        val uniqueConstraints : List<User> =
+            getUniqueConstraintFields(user.email)
 
         return if (isUnique(uniqueConstraints)){
             userRepository.save(user)
@@ -36,9 +31,7 @@ class UserService (private val userRepository: UserRepository){ //TODO:Password 
         else{
             val notUniqueMap : MutableMap<String, List<String>> = mutableMapOf()
 
-            if (uniqueConstraints.first.isNotEmpty()) notUniqueMap["username"] =
-                listOf(defaultDuplicateMessage("Username"))
-            if (uniqueConstraints.second.isNotEmpty()) notUniqueMap["Email"] =
+            if (uniqueConstraints.isNotEmpty()) notUniqueMap["Email"] =
                 listOf(defaultDuplicateMessage("Email"))
 
             throw CustomUniqueConstraintsException(notUniqueMap)
@@ -48,30 +41,25 @@ class UserService (private val userRepository: UserRepository){ //TODO:Password 
     fun update(userID : Long, user : User) : User {
         val existingUser = getUserByID(userID)
 
-        val isUnique : (Pair<List<User>, List<User>>) -> Boolean = {
-            users: Pair<List<User>, List<User>> ->
-                (users.first.contains(existingUser) || users.first.isEmpty()) &&
-                (users.second.contains(existingUser) || users.second.isEmpty())
+        val isUnique : (List<User>) -> Boolean = {
+            users: List<User> ->
+                (users.contains(existingUser) || users.isEmpty())
         }
 
-        val uniqueConstraints : Pair<List<User>, List<User>> =
-            getUniqueConstraintFields(user.username, user.email)
+        val uniqueConstraints : List<User> =
+            getUniqueConstraintFields(user.email)
 
         return if (isUnique(uniqueConstraints)) {
-            existingUser.username = user.username
+            existingUser.name = user.name
             existingUser.email = user.email
-            existingUser.password = user.password ?: existingUser.password
+            //existingUser.password = user.password ?: existingUser.password
 
             userRepository.save(existingUser)
         } else {
             val notUniqueMap : MutableMap<String, List<String>> = mutableMapOf()
 
-            if (uniqueConstraints.first.isNotEmpty() && !uniqueConstraints
-                    .first.contains(existingUser)
-                ) notUniqueMap["username"] = listOf(defaultDuplicateMessage("Username"))
-            if (uniqueConstraints.second.isNotEmpty() && !uniqueConstraints
-                    .second.contains(existingUser)
-                ) notUniqueMap["Email"] = listOf(defaultDuplicateMessage("Email"))
+            if (uniqueConstraints.isNotEmpty() && !uniqueConstraints.contains(existingUser))
+                notUniqueMap["Email"] = listOf(defaultDuplicateMessage("Email"))
 
             throw CustomUniqueConstraintsException(notUniqueMap)
         }

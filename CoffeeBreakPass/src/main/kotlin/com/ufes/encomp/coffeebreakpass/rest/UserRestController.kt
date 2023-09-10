@@ -27,7 +27,7 @@ class UserRestController(private val userService: UserService) {
         .status(HttpStatus.OK).body(userService.getAllUsers())
 
     @GetMapping("/user/{id}")
-    fun getUserByID(@PathVariable("id") userID: Long): ResponseEntity<Any> = ResponseEntity
+    fun getUserByID(@PathVariable("id") userID: Long): ResponseEntity<User> = ResponseEntity
         .status(HttpStatus.OK).body(userService.getUserByID(userID))
 
     @PostMapping("/user")
